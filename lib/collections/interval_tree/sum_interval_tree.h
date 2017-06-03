@@ -3,51 +3,72 @@
 
 #include <vector>
 
+#include <lib/numbers/zero_element.h>
+
 #include "interval_tree.h"
 
 template <class T>
-class SumIntervalTree : public IntervalTree<T> {
+struct SumJoinValue {
+    T operator ()(T left, T right) {
+        return left + right;
+    }
+};
+
+template <class T>
+struct SumJoinDelta {
+    T operator ()(T was, T delta) {
+        return was + delta;
+    }
+};
+
+template <class T>
+struct SumAccumulate {
+    T operator ()(T value, T delta, int length) {
+        return value + delta * length;
+    }
+};
+
+template <class T>
+struct SumNeutralValue {
+    T operator ()() {
+        return Zero<T>::value();
+    }
+};
+
+template <class T>
+struct SumNeutralDelta {
+    T operator ()() {
+        return Zero<T>::value();
+    }
+};
+
+template <class T>
+class SumIntervalTree : public IntervalTree<T, SumJoinValue<T>, SumJoinDelta<T>,
+        SumAccumulate<T>, SumNeutralValue<T>, SumNeutralDelta<T>> {
 private:
     bool array_initialized;
     std::vector<T> array;
 
 public:
-    explicit SumIntervalTree(int size) : IntervalTree<T>(size) {
+    explicit SumIntervalTree(int size) : IntervalTree<T, SumJoinValue<T>, SumJoinDelta<T>,
+            SumAccumulate<T>, SumNeutralValue<T>, SumNeutralDelta<T>>(size) {
         array_initialized = false;
+        this->Init();
     }
 
-    explicit SumIntervalTree(std::vector<T> array) : IntervalTree<T>(array.size(), false) {
+    explicit SumIntervalTree(const std::vector<T> &array) : IntervalTree<T, SumJoinValue<T>, SumJoinDelta<T>,
+            SumAccumulate<T>, SumNeutralValue<T>, SumNeutralDelta<T>>(array.size()) {
         array_initialized = true;
         this->array = array;
-        this->init();
+        this->Init();
     }
 
 protected:
-    T init_value(int index) override {
+    T InitValue(int index) override {
         if (!array_initialized) {
-            return 0;
+            return Zero<T>::value();
         }
         return array[index];
-    }
-
-    T join_value(T left, T right) override {
-        return left + right;
-    }
-
-    T join_delta(T was, T delta) override {
-        return was + delta;
-    }
-
-    T accumulate(T value, T delta, int length) override {
-        return value + delta * length;
-    }
-
-    T neutral_value() override {
-        return 0;
-    }
-
-    T neutral_delta() override {
-        return 0;
     }
 };
 

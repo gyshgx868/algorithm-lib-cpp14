@@ -8,48 +8,67 @@
 #include "interval_tree.h"
 
 template <class T>
-class MinIntervalTree : public IntervalTree<T> {
+struct MinJoinValue {
+    T operator ()(T left, T right) {
+        return std::min(left, right);
+    }
+};
+
+template <class T>
+struct MinJoinDelta {
+    T operator ()(T was, T delta) {
+        return std::min(was, delta);
+    }
+};
+
+template <class T>
+struct MinAccumulate {
+    T operator ()(T value, T delta, int length) {
+        return std::min(value, delta);
+    }
+};
+
+template <class T>
+struct MinNeutralValue {
+    T operator ()() {
+        return std::numeric_limits<T>::max();
+    }
+};
+
+template <class T>
+struct MinNeutralDelta {
+    T operator ()() {
+        return std::numeric_limits<T>::max();
+    }
+};
+
+template <class T>
+class MinIntervalTree : public IntervalTree<T, MinJoinValue<T>, MinJoinDelta<T>,
+        MinAccumulate<T>, MinNeutralValue<T>, MinNeutralDelta<T>> {
 private:
     bool array_initialized;
     std::vector<T> array;
 
 public:
-    explicit MinIntervalTree(int size) : IntervalTree<T>(size) {
+    explicit MinIntervalTree(int size) : IntervalTree<T, MinJoinValue<T>, MinJoinDelta<T>,
+            MinAccumulate<T>, MinNeutralValue<T>, MinNeutralDelta<T>>(size) {
         array_initialized = false;
+        this->Init();
     }
 
-    explicit MinIntervalTree(std::vector<T> array) : IntervalTree<T>(array.size(), false) {
+    explicit MinIntervalTree(const std::vector<T> &array) : IntervalTree<T, MinJoinValue<T>, MinJoinDelta<T>,
+            MinAccumulate<T>, MinNeutralValue<T>, MinNeutralDelta<T>>(array.size()) {
         array_initialized = true;
         this->array = array;
-        this->init();
+        this->Init();
     }
 
 protected:
-    T init_value(int index) override {
+    T InitValue(int index) override {
         if (!array_initialized) {
             return std::numeric_limits<T>::max();
         }
         return array[index];
-    }
-
-    T join_value(T left, T right) override {
-        return std::min(left, right);
-    }
-
-    T join_delta(T was, T delta) override {
-        return std::min(was, delta);
-    }
-
-    T accumulate(T value, T delta, int length) override {
-        return std::min(value, delta);
-    }
-
-    T neutral_value() override {
-        return std::numeric_limits<T>::max();
-    }
-
-    T neutral_delta() override {
-        return std::numeric_limits<T>::max();
     }
 };
 
